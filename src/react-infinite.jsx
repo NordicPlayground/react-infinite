@@ -220,7 +220,8 @@ var Infinite = React.createClass({
     return {
       height: this.props.containerHeight,
       overflowX: 'hidden',
-      overflowY: 'scroll'
+      overflowY: 'scroll',
+      outline: 'none'
     };
   },
 
@@ -247,6 +248,7 @@ var Infinite = React.createClass({
     // rendered elements would have taken up otherwise
     return <div className={this.props.className ? this.props.className : ''}
                 ref="scrollable"
+                tabIndex="1"
                 style={this.buildScrollableStyle()}
                 onScroll={this.infiniteHandleScroll}>
       <div ref="smoothScrollingWrapper" style={infiniteScrollStyles}>
