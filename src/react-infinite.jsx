@@ -47,7 +47,6 @@ var Infinite = React.createClass({
       loadingSpinnerDelegate: <div/>,
       onInfiniteLoad: () => {},
       isInfiniteLoading: false,
-      follow: true,
       timeScrollStateLastsForAfterUserScrolls: 150
     };
   },
@@ -110,7 +109,7 @@ var Infinite = React.createClass({
 
     newStateObject.preloadBatchSize = this.getPreloadBatchSizeFromProps(nextProps);
     newStateObject.preloadAdditionalHeight = this.getPreloadAdditionalHeightFromProps(nextProps);
-    this.updatingBecausePropsChanged = true;
+
     this.setState(newStateObject, () => {
       that.setStateFromScrollTop(that.getScrollTop());
     });
@@ -132,11 +131,6 @@ var Infinite = React.createClass({
     if (React.Children.count(this.props.children) !== React.Children.count(prevProps.children)) {
       this.setStateFromScrollTop(this.getScrollTop());
     }
-    if (this.props.follow && this.updatingBecausePropsChanged) {
-      var domNode = this.refs.scrollable.getDOMNode();
-      domNode.scrollTop = domNode.scrollHeight - domNode.clientHeight;
-    }
-    this.updatingBecausePropsChanged = false;
   },
 
   componentWillMount() {
