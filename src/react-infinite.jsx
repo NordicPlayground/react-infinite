@@ -48,6 +48,8 @@ var Infinite = React.createClass({
     isInfiniteLoading: React.PropTypes.bool,
     timeScrollStateLastsForAfterUserScrolls: React.PropTypes.number,
 
+    autoScroll: React.PropTypes.bool,
+
     className: React.PropTypes.string
   },
   statics: {
@@ -83,6 +85,7 @@ var Infinite = React.createClass({
       displayBottomUpwards: false,
 
       isInfiniteLoading: false,
+      autoScroll: true,
       timeScrollStateLastsForAfterUserScrolls: 150,
 
       className: ''
@@ -212,6 +215,7 @@ var Infinite = React.createClass({
           height: this.computedProps.containerHeight,
           overflowX: 'hidden',
           overflowY: 'scroll',
+          outline: 'none',
           WebkitOverflowScrolling: 'touch'
         };
       };
@@ -243,6 +247,8 @@ var Infinite = React.createClass({
 
     newState.preloadBatchSize = computedProps.preloadBatchSize;
     newState.preloadAdditionalHeight = computedProps.preloadAdditionalHeight;
+
+    this.updatingBecausePropsChanged = true;
 
     newState = Object.assign(newState,
       infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(
@@ -290,6 +296,13 @@ var Infinite = React.createClass({
       );
       this.setState(newApertureState);
     }
+
+    if (this.props.autoScroll && this.updatingBecausePropsChanged) {
+        let scrollable = this.refs.scrollable;
+        scrollable.scrollTop = scrollable.scrollHeight - scrollable.clientHeight;
+    }
+
+    this.updatingBecausePropsChanged = false;
   },
 
   componentDidMount() {
@@ -422,6 +435,7 @@ var Infinite = React.createClass({
     // rendered elements would have taken up otherwise
     return <div className={this.computedProps.className}
                 ref="scrollable"
+                tabIndex="1"
                 style={this.utils.buildScrollableStyle()}
                 onScroll={this.utils.nodeScrollListener}>
       <div ref="smoothScrollingWrapper" style={infiniteScrollStyles}>
