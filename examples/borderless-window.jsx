@@ -58,13 +58,14 @@ var InfiniteList = React.createClass({
     },
 
     render: function() {
-        return <Infinite elementHeight={50}
+        return <Infinite elementHeight={51}
                          containerHeight={window.innerHeight}
                          infiniteLoadBeginEdgeOffset={200}
                          onInfiniteLoad={this.handleInfiniteLoad}
                          loadingSpinnerDelegate={this.elementInfiniteLoad()}
                          isInfiniteLoading={this.state.isInfiniteLoading}
                          timeScrollStateLastsForAfterUserScrolls={1000}
+                         useWindowAsScrollContainer={true}
                          >
                     {this.state.elements}
                 </Infinite>;
