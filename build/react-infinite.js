@@ -3,6 +3,8 @@
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 var React = global.React || require('react');
+var ReactDOM = global.ReactDOM || require('react-dom');
+
 require('./utils/establish-polyfills');
 var scaleEnum = require('./utils/scaleEnum');
 var infiniteHelpers = require('./utils/infiniteHelpers');
@@ -50,8 +52,11 @@ var Infinite = React.createClass({
     timeScrollStateLastsForAfterUserScrolls: React.PropTypes.number,
 
     autoScroll: React.PropTypes.bool,
+    className: React.PropTypes.string,
 
-    className: React.PropTypes.string
+    styles: React.PropTypes.shape({
+      scrollableStyle: React.PropTypes.object
+    }).isRequired
   },
   statics: {
     containerHeightScaleFactor: function containerHeightScaleFactor(factor) {
@@ -89,7 +94,9 @@ var Infinite = React.createClass({
       autoScroll: true,
       timeScrollStateLastsForAfterUserScrolls: 150,
 
-      className: ''
+      className: '',
+
+      styles: {}
     };
   },
 
@@ -137,7 +144,7 @@ var Infinite = React.createClass({
 
     if (typeof preloadBatchSize === 'number') {
       newProps.preloadBatchSize = preloadBatchSize;
-    } else if (batchSize.type === scaleEnum.CONTAINER_HEIGHT_SCALE_FACTOR) {
+    } else if (typeof batchSize === 'object' && batchSize.type === scaleEnum.CONTAINER_HEIGHT_SCALE_FACTOR) {
       newProps.preloadBatchSize = newProps.containerHeight * batchSize.amount;
     } else {
       newProps.preloadBatchSize = 0;
@@ -150,7 +157,7 @@ var Infinite = React.createClass({
     var additionalHeight = preloadAdditionalHeight && preloadAdditionalHeight.type ? preloadAdditionalHeight : defaultPreloadAdditionalHeightScaling;
     if (typeof preloadAdditionalHeight === 'number') {
       newProps.preloadAdditionalHeight = preloadAdditionalHeight;
-    } else if (additionalHeight.type === scaleEnum.CONTAINER_HEIGHT_SCALE_FACTOR) {
+    } else if (typeof additionalHeight === 'object' && additionalHeight.type === scaleEnum.CONTAINER_HEIGHT_SCALE_FACTOR) {
       newProps.preloadAdditionalHeight = newProps.containerHeight * additionalHeight.amount;
     } else {
       newProps.preloadAdditionalHeight = 0;
@@ -166,7 +173,7 @@ var Infinite = React.createClass({
     utilities.getLoadingSpinnerHeight = function () {
       var loadingSpinnerHeight = 0;
       if (_this.refs && _this.refs.loadingSpinner) {
-        var loadingSpinnerNode = React.findDOMNode(_this.refs.loadingSpinner);
+        var loadingSpinnerNode = ReactDOM.findDOMNode(_this.refs.loadingSpinner);
         loadingSpinnerHeight = loadingSpinnerNode.offsetHeight || 0;
       }
       return loadingSpinnerHeight;
@@ -180,10 +187,10 @@ var Infinite = React.createClass({
       };
       utilities.nodeScrollListener = function () {};
       utilities.getScrollTop = function () {
-        return window.scrollY;
+        return window.pageYOffset;
       };
       utilities.setScrollTop = function (top) {
-        window.scroll(window.scrollX, top);
+        window.scroll(window.pageXOffset, top);
       };
       utilities.scrollShouldBeIgnored = function () {
         return false;
@@ -198,30 +205,32 @@ var Infinite = React.createClass({
       utilities.getScrollTop = function () {
         var scrollable;
         if (_this.refs && _this.refs.scrollable) {
-          scrollable = React.findDOMNode(_this.refs.scrollable);
+          scrollable = ReactDOM.findDOMNode(_this.refs.scrollable);
         }
         return scrollable ? scrollable.scrollTop : 0;
       };
+
       utilities.setScrollTop = function (top) {
         var scrollable;
         if (_this.refs && _this.refs.scrollable) {
-          scrollable = React.findDOMNode(_this.refs.scrollable);
+          scrollable = ReactDOM.findDOMNode(_this.refs.scrollable);
         }
         if (scrollable) {
           scrollable.scrollTop = top;
         }
       };
       utilities.scrollShouldBeIgnored = function (event) {
-        return event.target !== React.findDOMNode(_this.refs.scrollable);
+        return event.target !== ReactDOM.findDOMNode(_this.refs.scrollable);
       };
+
       utilities.buildScrollableStyle = function () {
-        return {
+        return Object.assign({}, {
           height: _this.computedProps.containerHeight,
           overflowX: 'hidden',
           overflowY: 'scroll',
           outline: 'none',
           WebkitOverflowScrolling: 'touch'
-        };
+        }, _this.computedProps.styles.scrollableStyle || {});
       };
     }
     return utilities;
@@ -281,7 +290,9 @@ var Infinite = React.createClass({
         this.utils.setScrollTop(this.state.infiniteComputer.getTotalScrollableHeight() - prevState.infiniteComputer.getTotalScrollableHeight() + this.preservedScrollState);
       }
     }
-    if (React.Children.count(this.props.children) !== React.Children.count(prevProps.children)) {
+
+    var hasLoadedMoreChildren = this.state.numberOfChildren !== prevState.numberOfChildren;
+    if (hasLoadedMoreChildren) {
       var newApertureState = infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(this.state, this.utils.getScrollTop());
       this.setState(newApertureState);
     }
@@ -292,15 +303,18 @@ var Infinite = React.createClass({
     }
 
     this.updatingBecausePropsChanged = false;
+
+    var isMissingVisibleRows = hasLoadedMoreChildren && !this.hasAllVisibleItems() && !this.state.isInfiniteLoading;
+    if (isMissingVisibleRows) {
+      this.onInfiniteLoad();
+    }
   },
 
   componentDidMount: function componentDidMount() {
     this.utils.subscribeToScrollListener();
-    if (_isFinite(this.computedProps.infiniteLoadBeginEdgeOffset) && this.state.infiniteComputer.getTotalScrollableHeight() < this.computedProps.containerHeight) {
-      this.setState({
-        isInfiniteLoading: true
-      });
-      this.computedProps.onInfiniteLoad();
+
+    if (!this.hasAllVisibleItems()) {
+      this.onInfiniteLoad();
     }
 
     if (this.props.displayBottomUpwards) {
@@ -319,7 +333,7 @@ var Infinite = React.createClass({
     if (this.utils.scrollShouldBeIgnored(e)) {
       return;
     }
-    this.computedProps.handleScroll(React.findDOMNode(this.refs.scrollable));
+    this.computedProps.handleScroll(ReactDOM.findDOMNode(this.refs.scrollable));
     this.handleScroll(this.utils.getScrollTop());
   },
 
@@ -349,12 +363,21 @@ var Infinite = React.createClass({
     return this.state.infiniteComputer.getTotalScrollableHeight() - this.computedProps.containerHeight;
   },
 
+  hasAllVisibleItems: function hasAllVisibleItems() {
+    return !(_isFinite(this.computedProps.infiniteLoadBeginEdgeOffset) && this.state.infiniteComputer.getTotalScrollableHeight() < this.computedProps.containerHeight);
+  },
+
   passedEdgeForInfiniteScroll: function passedEdgeForInfiniteScroll(scrollTop) {
     if (this.computedProps.displayBottomUpwards) {
       return !this.shouldAttachToBottom && scrollTop < this.computedProps.infiniteLoadBeginEdgeOffset;
     } else {
       return scrollTop > this.state.infiniteComputer.getTotalScrollableHeight() - this.computedProps.containerHeight - this.computedProps.infiniteLoadBeginEdgeOffset;
     }
+  },
+
+  onInfiniteLoad: function onInfiniteLoad() {
+    this.setState({ isInfiniteLoading: true });
+    this.computedProps.onInfiniteLoad();
   },
 
   handleScroll: function handleScroll(scrollTop) {
@@ -365,10 +388,8 @@ var Infinite = React.createClass({
     var newApertureState = infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(this.state, scrollTop);
 
     if (this.passedEdgeForInfiniteScroll(scrollTop) && !this.state.isInfiniteLoading) {
-      this.setState(Object.assign({}, newApertureState, {
-        isInfiniteLoading: true
-      }));
-      this.computedProps.onInfiniteLoad();
+      this.setState(Object.assign({}, newApertureState));
+      this.onInfiniteLoad();
     } else {
       this.setState(newApertureState);
     }
@@ -383,7 +404,7 @@ var Infinite = React.createClass({
 
   render: function render() {
     var displayables;
-    if (React.Children.count(this.computedProps.children) > 1) {
+    if (this.state.numberOfChildren > 1) {
       displayables = this.computedProps.children.slice(this.state.displayIndexStart, this.state.displayIndexEnd + 1);
     } else {
       displayables = this.computedProps.children;

@@ -7,6 +7,8 @@ React Infinite
 
 **A browser-ready efficient scrolling container based on UITableView.**
 
+**React Infinite 0.7.1 only supports React 0.14 and above. Please pin your package to 0.6.0 for React 0.13 support.**
+
 - Support for both static and [variable element heights](https://github.com/seatgeek/react-infinite#elements-of-varying-heights)
 - Built-in support for [infinite loading](https://github.com/seatgeek/react-infinite#number-infiniteloadbeginedgeoffset) of upcoming pages
 - Ability to use the [window as the scroll container](https://github.com/seatgeek/react-infinite#bool-usewindowasscrollcontainer)
@@ -220,7 +222,7 @@ var InfiniteList = React.createClass({
     }
 });
 
-React.render(<InfiniteList/>, document.getElementById('react-example-one'));
+ReactDOM.render(<InfiniteList/>, document.getElementById('react-example-one'));
 ```
 
 SeatGeek also currently uses React Infinite in production on our event pages; because we only have pages for events in the future, a link would not be appropriate. To see one, head to one of our team pages for the [New York Giants](https://seatgeek.com/new-york-giants-tickets), or the [New York Mets](https://seatgeek.com/new-york-mets-tickets), or the [New York Knicks](https://seatgeek.com/new-york-knicks-tickets), and click on the green button for an event to see them in action in the Omnibox.
