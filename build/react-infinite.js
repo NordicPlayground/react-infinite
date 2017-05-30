@@ -3,7 +3,8 @@
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 var React = global.React || require('react');
-var ReactDOM = global.ReactDOM || require('react-dom');
+var PropTypes = global.PropTypes || require('prop-types');
+var createReactClass = global.createReactClass || require('create-react-class');
 
 require('./utils/establish-polyfills');
 var scaleEnum = require('./utils/scaleEnum');
@@ -13,13 +14,11 @@ var _isFinite = require('lodash.isfinite');
 var preloadType = require('./utils/types').preloadType;
 var checkProps = checkProps = require('./utils/checkProps');
 
-var Infinite = React.createClass({
-  displayName: 'Infinite',
-
+var Infinite = createReactClass({
   propTypes: {
-    children: React.PropTypes.any,
+    children: PropTypes.any,
 
-    handleScroll: React.PropTypes.func,
+    handleScroll: PropTypes.func,
 
     // preloadBatchSize causes updates only to
     // happen each preloadBatchSize pixels of scrolling.
@@ -36,26 +35,26 @@ var Infinite = React.createClass({
     // The provided elementHeight can be either
     //  1. a constant: all elements are the same height
     //  2. an array containing the height of each element
-    elementHeight: React.PropTypes.oneOfType([React.PropTypes.number, React.PropTypes.arrayOf(React.PropTypes.number)]).isRequired,
+    elementHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.arrayOf(PropTypes.number)]).isRequired,
     // This is the total height of the visible window. One
     // of
-    containerHeight: React.PropTypes.number,
-    useWindowAsScrollContainer: React.PropTypes.bool,
+    containerHeight: PropTypes.number,
+    useWindowAsScrollContainer: PropTypes.bool,
 
-    displayBottomUpwards: React.PropTypes.bool.isRequired,
+    displayBottomUpwards: PropTypes.bool.isRequired,
 
-    infiniteLoadBeginEdgeOffset: React.PropTypes.number,
-    onInfiniteLoad: React.PropTypes.func,
-    loadingSpinnerDelegate: React.PropTypes.node,
+    infiniteLoadBeginEdgeOffset: PropTypes.number,
+    onInfiniteLoad: PropTypes.func,
+    loadingSpinnerDelegate: PropTypes.node,
 
-    isInfiniteLoading: React.PropTypes.bool,
-    timeScrollStateLastsForAfterUserScrolls: React.PropTypes.number,
+    isInfiniteLoading: PropTypes.bool,
+    timeScrollStateLastsForAfterUserScrolls: PropTypes.number,
 
-    autoScroll: React.PropTypes.bool,
-    className: React.PropTypes.string,
+    autoScroll: PropTypes.bool,
+    className: PropTypes.string,
 
-    styles: React.PropTypes.shape({
-      scrollableStyle: React.PropTypes.object
+    styles: PropTypes.shape({
+      scrollableStyle: PropTypes.object
     }).isRequired
   },
   statics: {
@@ -78,6 +77,12 @@ var Infinite = React.createClass({
   preservedScrollState: 0,
   loadingSpinnerHeight: 0,
   deprecationWarned: false,
+
+  scrollable: null,
+  topSpacer: null,
+  bottomSpacer: null,
+  smoothScrollingWrapper: null,
+  loadingSpinner: null,
 
   getDefaultProps: function getDefaultProps() {
     return {
@@ -172,9 +177,8 @@ var Infinite = React.createClass({
     var utilities = {};
     utilities.getLoadingSpinnerHeight = function () {
       var loadingSpinnerHeight = 0;
-      if (_this.refs && _this.refs.loadingSpinner) {
-        var loadingSpinnerNode = ReactDOM.findDOMNode(_this.refs.loadingSpinner);
-        loadingSpinnerHeight = loadingSpinnerNode.offsetHeight || 0;
+      if (_this.loadingSpinner) {
+        loadingSpinnerHeight = _this.loadingSpinner.offsetHeight || 0;
       }
       return loadingSpinnerHeight;
     };
@@ -203,24 +207,16 @@ var Infinite = React.createClass({
       utilities.unsubscribeFromScrollListener = function () {};
       utilities.nodeScrollListener = this.infiniteHandleScroll;
       utilities.getScrollTop = function () {
-        var scrollable;
-        if (_this.refs && _this.refs.scrollable) {
-          scrollable = ReactDOM.findDOMNode(_this.refs.scrollable);
-        }
-        return scrollable ? scrollable.scrollTop : 0;
+        return _this.scrollable ? _this.scrollable.scrollTop : 0;
       };
 
       utilities.setScrollTop = function (top) {
-        var scrollable;
-        if (_this.refs && _this.refs.scrollable) {
-          scrollable = ReactDOM.findDOMNode(_this.refs.scrollable);
-        }
-        if (scrollable) {
-          scrollable.scrollTop = top;
+        if (_this.scrollable) {
+          _this.scrollable.scrollTop = top;
         }
       };
       utilities.scrollShouldBeIgnored = function (event) {
-        return event.target !== ReactDOM.findDOMNode(_this.refs.scrollable);
+        return event.target !== _this.scrollable;
       };
 
       utilities.buildScrollableStyle = function () {
@@ -298,7 +294,7 @@ var Infinite = React.createClass({
     }
 
     if (this.props.autoScroll && this.updatingBecausePropsChanged) {
-      var scrollable = this.refs.scrollable;
+      var scrollable = this.scrollable;
       scrollable.scrollTop = scrollable.scrollHeight - scrollable.clientHeight;
     }
 
@@ -333,7 +329,7 @@ var Infinite = React.createClass({
     if (this.utils.scrollShouldBeIgnored(e)) {
       return;
     }
-    this.computedProps.handleScroll(ReactDOM.findDOMNode(this.refs.scrollable));
+    this.computedProps.handleScroll(this.scrollable);
     this.handleScroll(this.utils.getScrollTop());
   },
 
@@ -403,6 +399,8 @@ var Infinite = React.createClass({
   },
 
   render: function render() {
+    var _this2 = this;
+
     var displayables;
     if (this.state.numberOfChildren > 1) {
       displayables = this.computedProps.children.slice(this.state.displayIndexStart, this.state.displayIndexEnd + 1);
@@ -429,7 +427,9 @@ var Infinite = React.createClass({
 
     var loadingSpinner = this.computedProps.infiniteLoadBeginEdgeOffset === undefined ? null : React.createElement(
       'div',
-      { ref: 'loadingSpinner' },
+      { ref: function (c) {
+          _this2.loadingSpinner = c;
+        } },
       this.state.isInfiniteLoading ? this.computedProps.loadingSpinnerDelegate : null
     );
 
@@ -438,19 +438,27 @@ var Infinite = React.createClass({
     return React.createElement(
       'div',
       { className: this.computedProps.className,
-        ref: 'scrollable',
+        ref: function (c) {
+          _this2.scrollable = c;
+        },
         tabIndex: '1',
         style: this.utils.buildScrollableStyle(),
         onScroll: this.utils.nodeScrollListener },
       React.createElement(
         'div',
-        { ref: 'smoothScrollingWrapper', style: infiniteScrollStyles },
-        React.createElement('div', { ref: 'topSpacer',
+        { ref: function (c) {
+            _this2.smoothScrollingWrapper = c;
+          }, style: infiniteScrollStyles },
+        React.createElement('div', { ref: function (c) {
+            _this2.topSpacer = c;
+          },
           style: this.buildHeightStyle(topSpacerHeight) }),
         this.computedProps.displayBottomUpwards && loadingSpinner,
         displayables,
         !this.computedProps.displayBottomUpwards && loadingSpinner,
-        React.createElement('div', { ref: 'bottomSpacer',
+        React.createElement('div', { ref: function (c) {
+            _this2.bottomSpacer = c;
+          },
           style: this.buildHeightStyle(bottomSpacerHeight) })
       )
     );

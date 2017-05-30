@@ -12,8 +12,9 @@ jest.dontMock('lodash.isarray');
 jest.dontMock('react-dom');
 
 var React = require('react');
+var createReactClass = require('create-react-class');
 var ReactDOM = require('react-dom');
-var TestUtils = require('react-addons-test-utils');
+var TestUtils = require('react-dom/test-utils');
 var Infinite = require('../src/react-infinite.jsx');
 
 var renderHelpers = require('./helpers/renderHelpers');
@@ -94,8 +95,8 @@ describe('The Children of the React Infinite Component', function() {
         </Infinite>
       );
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('0px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('0px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('0px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('0px');
 
     expect(TestUtils.findRenderedDOMComponentWithClass(rootNode, 'test-div-0')).not.toBeUndefined();
     expect(TestUtils.findRenderedDOMComponentWithClass(rootNode, 'test-div-1')).not.toBeUndefined();
@@ -111,8 +112,8 @@ describe('The Children of the React Infinite Component', function() {
         </Infinite>
       );
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('0px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('800px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('0px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('800px');
 
     // Why are six nodes rendered? Since we have not scrolled at
     // all, the extent that React Infinite will render is
@@ -133,8 +134,6 @@ describe('The Children of the React Infinite Component', function() {
         TestUtils.findRenderedDOMComponentWithClass(rootNode, 'test-div-' + i);
       }).toThrow();
     }
-
-
   });
 
   it('renders more children when preloadAdditionalHeight is increased beyond its default', function() {
@@ -148,8 +147,8 @@ describe('The Children of the React Infinite Component', function() {
         </Infinite>
       );
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('0px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('600px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('0px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('600px');
 
     // Why are seven nodes rendered? Since we have not scrolled at
     // all, the extent that React Infinite will render is
@@ -184,8 +183,8 @@ describe('The Children of the React Infinite Component', function() {
         </Infinite>
       );
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('0px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('400px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('0px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('400px');
 
     // Why are eight nodes rendered? Since we have not scrolled at
     // all, the extent that React Infinite will render is
@@ -235,8 +234,8 @@ describe('The Scrolling Behavior of the Constant Height React Infinite Component
     //  1600 pixels: blockEnd, end of block that scrollTop of 1500 pixels is in
     //  2400 pixels: windowBottom, end of first displayed element
     //  4000 pixels: end of bottomSpacer element
-    expect(rootNode.refs.topSpacer._style.height).toEqual('400px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('1600px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('400px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('1600px');
 
     // Above the batch and its preloadAdditionalHeight
     for (var i = 0; i < 2; i++) {
@@ -277,8 +276,8 @@ describe('The Scrolling Behavior of the Constant Height React Infinite Component
       target: rootDomNode
     });
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('2800px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('0px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('2800px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('0px');
 
     // Above the batch and its preloadAdditionalHeight
     for (var i = 0; i < 14; i++) {
@@ -313,8 +312,8 @@ describe('The Behavior of the Variable Height React Infinite Component', functio
     //  420 pixels: end of container
     //  630 pixels: end of windowBottom
     //  1400 pixels: end of bottomSpacer element
-    expect(rootNode.refs.topSpacer._style.height).toEqual('0px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('675px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('0px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('675px');
 
     // Within the batch and its preloadAdditionalHeight, top and bottom
     for (var i = 1; i < 11; i++) {
@@ -356,8 +355,8 @@ describe('The Behavior of the Variable Height React Infinite Component', functio
     //  1200 pixels: windowBottom, end of displayed element
     //  1400 pixels: end of bottomSpacer element
 
-    expect(rootNode.refs.topSpacer._style.height).toEqual('40px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('100px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('40px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('100px');
 
     // Above the batch and its preloadAdditionalHeight
     expect(function() { TestUtils.findRenderedDOMComponentWithClass(rootNode, 'test-div-0') }).toThrow();
@@ -407,8 +406,8 @@ describe('The Behavior of the Variable Height React Infinite Component', functio
     //  1000 pixels: start of block
     //  1400 pixels: end of block
     //  1400 pixels: end of windowBottom
-    expect(rootNode.refs.topSpacer._style.height).toEqual('575px');
-    expect(rootNode.refs.bottomSpacer._style.height).toEqual('0px');
+    expect(rootNode.topSpacer._style._values.height).toEqual('575px');
+    expect(rootNode.bottomSpacer._style._values.height).toEqual('0px');
 
     // Above the batch and its preloadAdditionalHeight
     for (var i = 0; i < 9; i++) {
@@ -535,8 +534,8 @@ describe("Maintaining React Infinite's internal scroll state", function() {
           {renderHelpers.divGenerator(20, elementHeight)}
         </Infinite>
       );
-    var wrapper = rootNode.refs.smoothScrollingWrapper;
-    expect(wrapper._style.pointerEvents).toEqual('');
+    var wrapper = rootNode.smoothScrollingWrapper;
+    expect(wrapper._style._values['pointer-events']).toBeUndefined();
   });
 
   it('has pointer-events: none upon scroll', function() {
@@ -557,8 +556,8 @@ describe("Maintaining React Infinite's internal scroll state", function() {
       target: rootDomNode
     });
 
-    var wrapper = rootNode.refs.smoothScrollingWrapper;
-    expect(wrapper._style.pointerEvents).toEqual('none');
+    var wrapper = rootNode.smoothScrollingWrapper;
+    expect(wrapper._style._values['pointer-events']).toEqual('none');
   });
 });
 
@@ -647,8 +646,8 @@ describe('React Infinite when the window is used as the Container', function() {
         {renderHelpers.divGenerator(20, elementHeight)}
       </Infinite>);
 
-    var scrollable = rootNode.refs.scrollable;
-    expect(scrollable.getAttribute('style')).toBeFalsy();
+    var scrollable = rootNode.scrollable;
+    expect(scrollable._style._values).toEqual({});
   });
 
 
@@ -923,7 +922,7 @@ describe('Rerendering React Infinite', function() {
 });
 
 describe('Requesting all visible rows', function () {
-  var InfiniteWrapper = React.createClass({
+  var InfiniteWrapper = createReactClass({
     getInitialState() {
       return { currentRows: 0, totalRequests: 0 }
     },

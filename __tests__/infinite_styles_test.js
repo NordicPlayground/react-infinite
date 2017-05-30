@@ -17,12 +17,12 @@ jest.dontMock('lodash.isarray');
 jest.dontMock('react-dom');
 
 var React = require('react');
-var TestUtils = require('react-addons-test-utils');
+var TestUtils = require('react-dom/test-utils');
 var Infinite = require('../src/react-infinite.jsx');
 
 
-describe("Infinite Styles Override: can override styles on the scrollable container", function() {
-  it("will be able to override styles on the scrollable container", function() {
+describe('Infinite Styles Override: can override styles on the scrollable container', function() {
+  it('will be able to override styles on the scrollable container', function() {
     var rootNode = TestUtils.renderIntoDocument(
       <Infinite elementHeight={200}
                 containerHeight={800}
@@ -33,6 +33,9 @@ describe("Infinite Styles Override: can override styles on the scrollable contai
       </Infinite>
     );
 
-    expect(rootNode.refs.scrollable.getAttribute('style')).toEqual('height: 800px; overflow-x: hidden; overflow-y: hidden; outline: none;')
+    var styles = rootNode.scrollable._style._values;
+    expect(styles.height).toEqual('800px');
+    expect(styles['overflow-x']).toEqual('hidden');
+    expect(styles['overflow-y']).toEqual('hidden');
   });
 });
